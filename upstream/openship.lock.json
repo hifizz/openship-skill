@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "repository": "oblien/openship",
+  "release": "v0.6.8",
+  "releasePublishedAt": "2026-08-25T20:15:49Z",
+  "mainCommit": "fcadb4a52fb490ace7d9605d3bb0e2e5269e0e11",
+  "mainCommitDate": "2026-08-25T20:00:16Z",
+  "checkedAt": "2026-08-28",
+  "reviewedSurfaces": [
+    "official website and documentation",
+    "CLI command registry and JSON output",
+    "context and project-link implementation",
+    "project, deployment, and service commands",
+    "REST route registry and permission model",
+    "MCP tools, prompts, and Streamable HTTP endpoint",
+    "official openship-config skill"
+  ],
+  "sourceOfTruthOrder": [
+    "installed CLI help and version",
+    "connected instance capabilities and schemas",
+    "current official documentation and source",
+    "bundled skill references"
+  ]
+}

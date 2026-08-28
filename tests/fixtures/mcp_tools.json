@@ -1,0 +1,64 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "get_projects_by_id",
+        "description": "Get one project by id.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {"type": "string"}
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false
+        }
+      },
+      {
+        "name": "patch_projects_by_id_services_by_serviceId",
+        "description": "Update a service configuration.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {"type": "string"},
+            "serviceId": {"type": "string"},
+            "body": {
+              "type": "object",
+              "properties": {
+                "image": {"type": "string"},
+                "volumes": {"type": "array"}
+              }
+            }
+          },
+          "required": ["id", "serviceId"],
+          "additionalProperties": false
+        },
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false
+        }
+      },
+      {
+        "name": "delete_projects_by_id",
+        "description": "Delete a project and tear down its resources.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {"type": "string"}
+          },
+          "required": ["id"],
+          "additionalProperties": false
+        },
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true
+        }
+      }
+    ]
+  }
+}

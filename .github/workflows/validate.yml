@@ -1,0 +1,31 @@
+name: Validate V0.1
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile helpers and tests
+        run: python -m compileall -q skills/openship/scripts tests
+
+      - name: Run unit and structure tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Check helper CLIs
+        run: |
+          python skills/openship/scripts/preflight.py --help >/dev/null
+          python skills/openship/scripts/mcp_catalog.py --help >/dev/null

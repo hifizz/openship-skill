@@ -1,0 +1,16 @@
+[
+  {
+    "current": "*",
+    "name": "production",
+    "apiUrl": "https://ship.example.test",
+    "dashboardUrl": "https://ship.example.test/dashboard",
+    "auth": "token"
+  },
+  {
+    "current": "",
+    "name": "local",
+    "apiUrl": "http://localhost:3001",
+    "dashboardUrl": "http://localhost:3000",
+    "auth": "token"
+  }
+]

@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "trigger-deploy-current-repo",
+      "prompt": "帮我把当前项目部署到 OpenShip，并跟到部署完成。",
+      "context": {"repoLinked": true, "contextMatches": true}
+    },
+    {
+      "id": "trigger-service-pgvector",
+      "prompt": "把 Openship 里这个 PostgreSQL 服务改成支持 pgvector，但不能丢数据。",
+      "context": {"serviceHasPersistentVolume": true}
+    },
+    {
+      "id": "do-not-trigger-openshift",
+      "prompt": "帮我升级 OpenShift 集群里的 Operator。",
+      "context": {}
+    },
+    {
+      "id": "do-not-trigger-generic-docker",
+      "prompt": "给普通 docker-compose.yml 增加一个 Redis 服务。",
+      "context": {"managedByOpenship": false}
+    },
+    {
+      "id": "read-context-and-project",
+      "prompt": "看看这个仓库现在连接的是哪个 Openship 实例和项目。",
+      "context": {"repoLinked": true}
+    },
+    {
+      "id": "block-context-mismatch",
+      "prompt": "直接部署吧。",
+      "context": {"projectLinkContext": "production", "activeContext": "local"}
+    },
+    {
+      "id": "block-ambiguous-project",
+      "prompt": "重启 api 项目的 web 服务。",
+      "context": {"matchingProjects": ["proj_a", "proj_b"]}
+    },
+    {
+      "id": "preserve-secret",
+      "prompt": "给 production 增加 FEATURE_FLAG=true，其他环境变量都别动。",
+      "context": {"existingMaskedSecrets": true}
+    },
+    {
+      "id": "append-service-port",
+      "prompt": "给 web 服务再开放 9090 端口，原来的端口保留。",
+      "context": {"currentPorts": ["3000:3000"]}
+    },
+    {
+      "id": "dirty-git-deploy",
+      "prompt": "部署当前分支。",
+      "context": {"gitDirty": true, "deploymentSource": "git"}
+    },
+    {
+      "id": "folder-deploy-sensitive-files",
+      "prompt": "把这个本地文件夹直接部署到 Openship。",
+      "context": {"containsDotEnv": true, "isGitRepository": false}
+    },
+    {
+      "id": "handle-action-required",
+      "prompt": "部署怎么卡住了？帮我继续。",
+      "context": {"deploymentStatus": "action_required", "pendingActions": 1}
+    },
+    {
+      "id": "apply-stale-service-config",
+      "prompt": "我刚改了数据库环境变量，重启服务让它生效。",
+      "context": {"restartReturns": "SERVICE_CONFIG_STALE"}
+    },
+    {
+      "id": "delete-project",
+      "prompt": "把 proj_123 这个项目删掉，但保留数据卷。",
+      "context": {"projectId": "proj_123", "volumes": ["pgdata"]}
+    },
+    {
+      "id": "wipe-volumes-vague",
+      "prompt": "这个项目坏了，清理干净重新来。",
+      "context": {"persistentVolumes": true}
+    },
+    {
+      "id": "container-exec",
+      "prompt": "进入 svc_123 容器执行 env 看看所有变量。",
+      "context": {"serviceId": "svc_123"}
+    },
+    {
+      "id": "self-host-command-on-cloud",
+      "prompt": "在这个 Openship 实例上运行 system repair。",
+      "context": {"selfHosted": false}
+    },
+    {
+      "id": "mcp-unavailable-fallback",
+      "prompt": "列出当前 token 能更新 Service 的 API schema。",
+      "context": {"mcpAvailable": false, "cliHelpAvailable": true}
+    }
+  ]
+}

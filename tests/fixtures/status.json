@@ -1,0 +1,27 @@
+{
+  "context": "production",
+  "apiUrl": "https://ship.example.test",
+  "service": {
+    "installed": true,
+    "running": true,
+    "kind": "systemd"
+  },
+  "ports": {
+    "api": 3001,
+    "dashboard": 3000
+  },
+  "reachable": true,
+  "health": {
+    "status": "ok"
+  },
+  "env": {
+    "selfHosted": true,
+    "deployMode": "local",
+    "authMode": "pat",
+    "teamMode": "multi_user",
+    "hasLocalHost": true,
+    "hasLocalDocker": true,
+    "machineName": "test-host",
+    "hostDomain": "example.test"
+  }
+}

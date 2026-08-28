@@ -1,0 +1,20 @@
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "prompts": [
+      {
+        "name": "deploy-from-git",
+        "title": "Deploy a project from a git repository",
+        "description": "Connect, detect, create, deploy, and watch.",
+        "arguments": [
+          {
+            "name": "repo",
+            "description": "Target repo as owner/name.",
+            "required": false
+          }
+        ]
+      }
+    ]
+  }
+}
