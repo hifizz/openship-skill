@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "skillVersion": "0.2.0",
   "repository": "oblien/openship",
   "release": "v0.6.8",
   "releasePublishedAt": "2026-08-25T20:15:49Z",
@@ -13,7 +14,9 @@
     "project, deployment, and service commands",
     "REST route registry and permission model",
     "MCP tools, prompts, and Streamable HTTP endpoint",
-    "official openship-config skill"
+    "official openship-config skill",
+    "secret masking and environment-variable output surfaces",
+    "build, deployment, log, Docker-history, and artifact exposure model"
   ],
   "sourceOfTruthOrder": [
     "installed CLI help and version",

@@ -5,5 +5,8 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .mcp-catalog*.json
+.secret-exposure*.json
+.leak-scan*.json
+.openship-operator/
 coverage.xml
 htmlcov/

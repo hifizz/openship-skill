@@ -6,11 +6,12 @@
 2. Context guard
 3. Resource identity
 4. Secret policy
-5. Update semantics
-6. Stateful workloads
-7. Destructive operations
-8. Exec and host commands
-9. Verification and audit record
+5. Secret Exposure Gate
+6. Update semantics
+7. Stateful workloads
+8. Destructive operations
+9. Exec and host commands
+10. Verification and audit record
 
 ## 1. Risk levels
 
@@ -23,7 +24,7 @@ Examples:
 - logs and non-secret configuration inspection;
 - MCP `tools/list` and `prompts/list`.
 
-Execute directly. Avoid revealing unnecessary internal or personal data.
+Execute directly only when the selected output is verified metadata-only or passes the Secret Exposure Gate. A nominally read-only log/env call can still leak credentials.
 
 ### R1 — Routine reversible
 
@@ -61,6 +62,8 @@ Examples:
 
 Require the exact target, explicit authorization for the destructive effect, and a blast-radius statement. A general request to “fix,” “reset,” or “clean up” is not sufficient consent.
 
+Risk level does not override secret safety. R0 output is blocked when it may expose plaintext.
+
 ## 2. Context guard
 
 Before any write, compare:
@@ -75,7 +78,7 @@ repository root
 
 Block the write when the link context and active context differ.
 
-Do not silently switch contexts because context switching changes the destination of every authenticated command. Show the available contexts without tokens, let the user-selected destination drive the switch, then rerun preflight.
+Do not silently switch contexts because switching changes the destination of every authenticated command. Show available contexts without tokens, let the user-selected destination drive the switch, then rerun context and secret-exposure preflight.
 
 A missing project link is not always blocking: an explicit project ID can be sufficient. A stale or conflicting link is blocking until resolved.
 
@@ -101,9 +104,17 @@ Never access or emit:
 - PATs or OAuth access tokens;
 - bearer headers;
 - secret environment values;
-- database passwords, private keys, SMTP credentials, or cloud secrets.
+- database passwords/credential URLs;
+- private keys, SMTP credentials, registry credentials, or cloud secrets.
 
-Use only safe metadata such as `hasToken`, key name, `isSecret`, and masked status.
+Use safe metadata only:
+
+```text
+key name
+scope/environment
+hasToken / isSecret / masked state
+updatedAt
+```
 
 Treat these as sentinels:
 
@@ -114,14 +125,52 @@ __OPENSHIP_MASKED__
 
 Do not:
 
-- save them as literal replacement values;
+- save a sentinel as a literal replacement;
 - infer the secret is empty;
-- overwrite the secret with `null` or `""` unless deletion is explicitly requested;
-- include a user-supplied secret in a command shown back to the user.
+- overwrite it with `null` or `""` unless deletion is explicitly requested;
+- include a user-supplied secret in a displayed command, JSON body, source file, evidence file, operation journal, or response;
+- retrieve a plaintext value merely to compare or preserve it.
 
-When a secret must be set, prefer a mechanism that accepts it without persisting it in shell history. If no safe mechanism is available, stop and explain the secure input step.
+When a secret must be set, prefer an interactive/write-only mechanism that does not persist the value in shell history or Agent context. If no such mechanism is proven, require an out-of-band Dashboard/user step.
 
-## 5. Update semantics
+## 5. Secret Exposure Gate
+
+Run `scripts/secret_exposure_preflight.py` before build/deploy, log retrieval, env read/write, Service/Compose changes, exec, backup, restore, or any API/MCP route that may touch sensitive data.
+
+The gate must classify:
+
+```text
+local sensitive sources
+remote environment state (none / present / unknown)
+build/config leak patterns
+CLI stdout and stderr
+shell history / command arguments
+Agent transcript and tool results
+API and MCP responses
+build/runtime/job logs
+Docker/BuildKit history
+artifacts and backups
+exec stdout/stderr
+```
+
+Core rules:
+
+1. Unknown remote secret presence is blocking for a sensitive operation.
+2. When sensitive data may be touched, every relevant output sink must be verified safe.
+3. `plaintext` and `unknown` sinks are blocking.
+4. Redaction after upstream persistence is not prevention.
+5. Real secrets are never used for output-safety tests.
+6. Disposable canary evidence is scoped to the tested version/mode/path.
+7. Evidence files contain behavior metadata only, never the canary or secret value.
+8. A new secret value is write-only/out of band by default.
+
+Use `scripts/log_leak_scan.py` only as a second line of defense before bounded output reaches the Agent. It does not sanitize data already persisted by Openship, Docker, CI, or a log collector.
+
+When a potential real credential is detected in output, stop, contain the raw sink, and advise rotation without repeating the value.
+
+See [secrets.md](secrets.md) for the full workflow.
+
+## 6. Update semantics
 
 Always GET before PATCH/PUT.
 
@@ -134,7 +183,7 @@ Classify fields as one of:
 - secret sentinel-preserving;
 - action endpoint with no persistent config mutation.
 
-For service updates, assume arrays replace wholesale unless the live schema says otherwise. Typical replacement fields include:
+For Service updates, assume arrays replace wholesale unless live schema says otherwise. Typical replacement fields include:
 
 - `ports`;
 - `volumes`;
@@ -144,11 +193,13 @@ For service updates, assume arrays replace wholesale unless the live schema says
 
 Construct the complete desired value from current state plus the requested change.
 
+Environment updates need an additional guard: do not GET plaintext values, do not round-trip masked sentinels as values, and do not replace unrelated keys. Use the narrowest key-level secret-aware operation available.
+
 Do not send unknown fields “just in case.” Validation may reject them, or future versions may assign them meaning.
 
-## 6. Stateful workloads
+## 7. Stateful workloads
 
-Treat a service as stateful if it has persistent volumes, stores durable data externally, or participates in replication/queues.
+Treat a Service as stateful when it has persistent volumes, stores durable data externally, or participates in replication/queues.
 
 Before changing it, record:
 
@@ -171,13 +222,14 @@ Then answer:
 - Does the new image read the existing data format?
 - Does it require an in-place migration?
 - Is downgrade supported?
-- Does the service need maintenance mode or traffic drain?
+- Does the Service need maintenance mode or traffic drain?
 - Can the old container be recreated without touching volumes?
 - How will success be checked at the data/application layer?
+- Will any diagnostic/build/migration output contain a credential?
 
-For PostgreSQL extensions such as pgvector, prefer an image or package strategy compatible with the existing major version and data directory. Do not replace or initialize the data directory. Verify the extension can be created in each required database after the service is healthy.
+For PostgreSQL extensions such as pgvector, use an image/package strategy compatible with the existing major version and data directory. Do not initialize or replace the data directory. Verify the extension in each required database only after the Service is healthy, and sanitize any command output.
 
-## 7. Destructive operations
+## 8. Destructive operations
 
 Before delete, wipe, restore, migration, reset, or uninstall, state:
 
@@ -187,6 +239,7 @@ Context / instance:
 Persistent data affected:
 Dependent services or domains:
 Backup / rollback:
+Secret-output assessment:
 Irreversible effect:
 ```
 
@@ -196,16 +249,16 @@ Use the platform's own confirmation/force flags only after this guard. Do not by
 
 Never combine a routine config fix with volume deletion unless the user explicitly chooses data destruction after seeing alternatives.
 
-## 8. Exec and host commands
+## 9. Exec and host commands
 
 Container exec and host-level commands are R3.
 
 Prefer:
 
 1. deployment status;
-2. build/runtime logs;
+2. bounded, sanitized logs after output classification;
 3. health endpoints;
-4. service desired config;
+4. Service desired config and safe metadata;
 5. container metadata;
 6. volume size/status;
 7. only then exec.
@@ -215,26 +268,28 @@ For exec:
 - run one narrow command;
 - use a short timeout;
 - avoid interactive shells;
-- avoid `env`, `/proc/*/environ`, credential paths, and shell history;
+- never run `env`, `printenv`, `/proc/*/environ`, credential-file reads, or shell-history dumps;
 - avoid package installation as an untracked permanent fix;
 - avoid mutation unless separately authorized;
-- capture exit code and minimal output.
+- sanitize bounded stdout/stderr locally before display;
+- capture exit code and minimal evidence.
 
 For host commands, prefer dedicated `openship system`, `server`, `edge`, or `doctor` behavior. Manual Docker/firewall/systemd changes can drift from the control plane.
 
-## 9. Verification and audit record
+## 10. Verification and audit record
 
 After a mutation, record:
 
 - command channel used;
-- sanitized arguments or body;
+- sanitized non-secret arguments/body description;
 - target IDs;
 - initial state relevant to the change;
+- Secret Exposure Gate decision and evidence scope;
 - returned operation/deployment ID;
 - terminal status;
 - read-back fields;
-- health/log/endpoint evidence;
+- health/endpoint/bounded-sanitized-log evidence;
 - rollback availability;
 - unresolved warnings.
 
-Do not include tokens or secret values in the record.
+Do not include tokens, canaries, secret values, raw environment objects, or raw log payloads in the record.

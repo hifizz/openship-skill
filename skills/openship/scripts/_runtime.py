@@ -11,15 +11,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 
-SCHEMA_VERSION = "0.1"
+from _secret_exposure import safe_diagnostic
+
+SCHEMA_VERSION = "0.2"
 DEFAULT_TIMEOUT_SECONDS = 12.0
 MAX_DIAGNOSTIC_CHARS = 600
-
-_TOKEN_PATTERNS = (
-    re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]+"),
-    re.compile(r"\bopsh_[A-Za-z0-9_-]{8,}\b"),
-    re.compile(r"(?i)(authorization\s*[:=]\s*)[^\s,;]+"),
-)
 
 
 @dataclass(frozen=True)
@@ -37,18 +33,9 @@ def utc_now() -> str:
 
 
 def redact(text: str) -> str:
-    """Redact token-like values and bound diagnostic size."""
+    """Redact credential-like values and bound diagnostic size."""
 
-    value = text or ""
-    for pattern in _TOKEN_PATTERNS:
-        value = pattern.sub(
-            lambda match: (match.group(1) if match.lastindex else "") + "<redacted>",
-            value,
-        )
-    value = value.strip()
-    if len(value) > MAX_DIAGNOSTIC_CHARS:
-        value = value[: MAX_DIAGNOSTIC_CHARS - 1] + "…"
-    return value
+    return safe_diagnostic(text or "", max_chars=MAX_DIAGNOSTIC_CHARS)
 
 
 def run_command(
@@ -57,7 +44,11 @@ def run_command(
     cwd: Path,
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
 ) -> CommandResult:
-    """Run a command without a shell and return captured text output."""
+    """Run a command without a shell and return captured text output.
+
+    Callers must not place secret values in ``args``. Capturing output does not
+    prove the producing system avoided persisting plaintext upstream.
+    """
 
     command = tuple(str(part) for part in args)
     env = os.environ.copy()

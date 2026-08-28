@@ -1,4 +1,4 @@
-name: Validate V0.1
+name: Validate V0.2
 
 on:
   push:
@@ -29,3 +29,23 @@ jobs:
         run: |
           python skills/openship/scripts/preflight.py --help >/dev/null
           python skills/openship/scripts/mcp_catalog.py --help >/dev/null
+          python skills/openship/scripts/secret_exposure_preflight.py --help >/dev/null
+          python skills/openship/scripts/log_leak_scan.py --help >/dev/null
+
+      - name: Verify fail-closed build behavior
+        run: |
+          set +e
+          python skills/openship/scripts/secret_exposure_preflight.py \
+            --cwd . \
+            --operation build \
+            --remote-env-state unknown \
+            --fail-closed >/tmp/secret-plan.json
+          code=$?
+          set -e
+          test "$code" -eq 4
+          python - <<'PY'
+          import json
+          data = json.load(open('/tmp/secret-plan.json', encoding='utf-8'))
+          assert data['decision'] == 'blocked'
+          assert data['touchesSensitiveData'] is True
+          PY

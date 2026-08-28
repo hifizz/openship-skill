@@ -1,4 +1,4 @@
 interface:
   display_name: "Openship Operator"
-  short_description: "Safely operate Openship deployments and infrastructure"
-  default_prompt: "Use $openship to inspect this repository's Openship context, plan the smallest safe change, execute it, and verify the result."
+  short_description: "Safely operate Openship without leaking user secrets"
+  default_prompt: "Use $openship to inspect this repository's Openship context, run the Secret Exposure Gate before builds or sensitive data handling, plan the smallest safe change, execute it, and verify the result."
